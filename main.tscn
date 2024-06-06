@@ -1,0 +1,104 @@
+[gd_scene load_steps=7 format=3 uid="uid://dl3fmmgj3lq4g"]
+
+[ext_resource type="PackedScene" uid="uid://b07132tmhl3e4" path="res://arena/arena.blend" id="1_bbvva"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_ntknt"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_bjn60"]
+font_size = 30
+outline_size = 10
+outline_color = Color(0.59, 0.36875, 0.1475, 1)
+shadow_size = 5
+shadow_color = Color(0, 0, 0, 0.647059)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_co6yl"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_4dtna"]
+sky_material = SubResource("ProceduralSkyMaterial_co6yl")
+
+[sub_resource type="Environment" id="Environment_f0d2m"]
+background_mode = 2
+sky = SubResource("Sky_4dtna")
+tonemap_mode = 2
+sdfgi_enabled = true
+glow_enabled = true
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_ntknt")
+colors = Array[Color]([Color(0.935961, 0.200729, 0.220126, 1), Color(0, 0.665845, 0.801853, 1), Color(0.2916, 0.81, 0.41256, 1), Color(0.622, 0.46, 1, 1)])
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -73.0
+offset_top = -85.955
+offset_right = 73.0007
+offset_bottom = -62.955
+grow_horizontal = 2
+grow_vertical = 2
+text = "STAR MARK ARENA"
+label_settings = SubResource("LabelSettings_bjn60")
+uppercase = true
+
+[node name="HBoxContainer" type="VBoxContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.381
+anchor_top = 0.368
+anchor_right = 0.611
+anchor_bottom = 1.0
+offset_left = 9.08798
+offset_top = 46.536
+offset_right = 0.127991
+offset_bottom = -258.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Host" type="Button" parent="Control/HBoxContainer"]
+layout_mode = 2
+text = "Host"
+
+[node name="Client" type="Button" parent="Control/HBoxContainer"]
+layout_mode = 2
+text = "Join
+"
+
+[node name="LineEdit" type="LineEdit" parent="Control/HBoxContainer"]
+layout_mode = 2
+placeholder_text = "Host Address"
+alignment = 1
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_f0d2m")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Arena" parent="." instance=ExtResource("1_bbvva")]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 24.7677, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.850811, 0.525472, 0, -0.525472, 0.850811, 8.62334, 6.66834, 0)
+current = true
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://characters/character.tscn")
+spawn_path = NodePath("..")
+
+[connection signal="pressed" from="Control/HBoxContainer/Host" to="." method="_on_host_pressed"]
+[connection signal="pressed" from="Control/HBoxContainer/Client" to="." method="_on_client_pressed"]
+[connection signal="text_changed" from="Control/HBoxContainer/LineEdit" to="." method="_on_line_edit_text_changed"]
