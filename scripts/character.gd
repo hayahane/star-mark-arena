@@ -4,6 +4,7 @@ enum{
 	PLAYER_STATE_JUMPING,
 	PLAYER_STATE_RUNNING,
 	PLAYER_STATE_IDLING,
+	PLAYER_STATE_ATTACK,
 }
 
 const SPEED = 5.0
@@ -19,11 +20,18 @@ var _cape_mat := StandardMaterial3D.new()
 		cape_color = value
 		_cape_mat.albedo_color = value
 var _player_state := PLAYER_STATE_IDLING
+@export_range(0,10,1) var max_hp := 5
+var current_hp := 5:
+	set(value):
+		var v = clamp(value,0,max_hp)
+		hp_changed.emit(current_hp, v)
+		current_hp = v
+
+signal hp_changed(old: int, new: int)
 
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(str(self.name).to_int())
-	print("Enter Tree: ", name, "  on  ", multiplayer.get_unique_id())
 	
 
 func _ready() -> void:
@@ -34,7 +42,6 @@ func _ready() -> void:
 	anim_player.play("Idle")
 	if is_multiplayer_authority():
 		cam.cam.current = true
-	print("Ready: ", name, "  on  ", multiplayer.get_unique_id(), " pl count: ", gm._player_count)
 
 
 func _process(delta: float) -> void:
@@ -53,7 +60,9 @@ func _physics_process(delta: float) -> void:
 		return
 	
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
-			velocity.y = JUMP_VELOCITY
+		velocity.y = JUMP_VELOCITY
+	if Input.is_action_just_pressed("attack") and is_on_floor():
+		attack.rpc()
 	# Get the input direction and handle the movement/deceleration.
 	# As good practice, you should replace UI actions with custom gameplay actions.
 	var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -72,6 +81,8 @@ func _physics_process(delta: float) -> void:
 
 @rpc("call_local")
 func set_anim(direction: Vector3, is_grounded: bool) -> void:
+	if _player_state == PLAYER_STATE_ATTACK:
+		return
 	if is_grounded:
 		if direction.length_squared() <= 0:
 			anim_player.speed_scale = 1
@@ -82,3 +93,29 @@ func set_anim(direction: Vector3, is_grounded: bool) -> void:
 	else:
 		anim_player.play("Jump_Idle")
 		anim_player.speed_scale = 1
+
+
+@rpc("call_local")
+func attack() -> void:
+	anim_player.speed_scale = 1
+	_player_state = PLAYER_STATE_ATTACK
+	anim_player.play("1H_Melee_Attack_Chop")
+	anim_player.queue("Idle")
+
+
+func _on_animation_player_animation_changed(old_name: StringName, new_name: StringName) -> void:
+	if old_name == "1H_Melee_Attack_Chop":
+		_player_state = PLAYER_STATE_IDLING
+
+
+var _target: Character
+
+func _on_area_3d_body_entered(body: Node3D) -> void:
+	_target = body as Character
+	if _target and _target != self and _player_state == PLAYER_STATE_ATTACK:
+		_target.on_attack.rpc(1)
+
+@rpc("call_local")
+func on_attack(damage: int) -> void:
+	current_hp -= damage
+	print(name, " attacked")
